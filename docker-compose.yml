@@ -24,7 +24,7 @@ services:
       - db-store:/var/lib/mysql
       - ./docker/db/log:/var/log/mysql
     ports:
-      - "3306:3306"
+      - "4306:3306"
 
 volumes:
   db-store: null

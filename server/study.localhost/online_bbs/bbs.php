@@ -1,14 +1,17 @@
 <?php
- $link = mysqli_connect('127.0.0.1','docker','');
- if(!$link) {
-    die('データベースに接できません:' . mysqli_connect_error());
- }
+    date_default_timezone_set("Asia/Tokyo");
+    $link = mysqli_connect('2a8bb028c9c0','docker','docker');
 
- mysql_select_db('database',$link);
- $errors = array();
+    if(!$link) {
+        die('データベースに接できません:' . mysqli_connect_error());
+    }
 
- if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = null;
+    mysqli_select_db($link,"database");
+    $link->set_charset('utf-8');
+    $errors = array();
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $name = null;
     if(!isset($_POST['name']) || !strlen($_POST['name'])) {
         $errors['name'] = '名前を入力してください';
     } else if (strlen($_POST['name']) > 40) {
@@ -26,34 +29,26 @@
     }
 
     if(count($errors) === 0) {
-        $sql = "insert into `posts`('name`,`comment`,`created_at`) value('"
-            . mysql_real_escape_string($name) . "','"
-            . mysql_real_escape_string($comment) . "','"
-            .date('Y-m-d H-i-s') . "')";
+        $sql = "insert into `posts`(`name`,`comment`,`create_at`) value('"
+            . mysqli_real_escape_string($link,$name) . "','"
+            . mysqli_real_escape_string($link,$comment) . "','"
+            . date('Y-m-d H:i:s') . "')";
 
-        mysql_query($sql,$link);
+        mysqli_query($link,$sql);
+        mysqli_close($link);
+        header('Location:http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
     }
-}
+    }
+    $sql = "select * from `posts` order by `create_at` desc";
+    $result = mysqli_query($link,$sql);
+    $psots = array();
+    if($result !== false && mysqli_num_rows($result)) {
+        while($post = mysqli_fetch_assoc($result)) {
+            $posts[] = $post;
+        }
+    }
+    mysqli_free_result($result);
+    mysqli_close($link);
 
+    include('view/bbs_view.php');
 ?>
-
-
-
-
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ひとこと掲示板</title>
-</head>
-<body>
-  <h1>ひとこと掲示板</h1>
-  <form action="bbs.php" method="post">
-    名前:<input type="text" name="name" /><br>
-    ひとこと:<input type="text" name="comment" size="60" /><br>
-    <input type="submit" name="submit" value="送信">
-  </form>
-</body>
-</html>
